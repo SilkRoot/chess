@@ -1,7 +1,7 @@
 import pygame
 import math
 from game import Board, GraphicalBoard
-from piece import getBoardIndex
+from piece import getBoardIndex, getPossibleMoves, Piece
 
 pygame.init()
 
@@ -46,14 +46,13 @@ def get_square_under_mouse():
     pos = pygame.Vector2(pygame.mouse.get_pos())
     x = pos[0]
     y = pos[1]
-    # print(f"Mouseposition: x={x} y={y}")
-    if x < display_variables.get("board_offset_x") or y < display_variables.get(
-            "board_offset_y") or x > display_variables.get("board_offset_x") + display_variables.get(
-        "fieldsize") * 8 or y > display_variables.get("board_offset_y") + display_variables.get("fieldsize") * 8:
+    if x < display_variables.get("board_offset_x") \
+            or y < display_variables.get("board_offset_y") \
+            or x > display_variables.get("board_offset_x") + display_variables.get("fieldsize") * 8 \
+            or y > display_variables.get("board_offset_y") + display_variables.get("fieldsize") * 8:
         return None, None
     col = math.floor((x - display_variables.get("board_offset_x")) / display_variables.get("fieldsize"))
     row = math.floor((y - display_variables.get("board_offset_y")) / display_variables.get("fieldsize"))
-    # print(f"Mouse over col {col} and row {row}")
     return col, row
 
 
@@ -67,28 +66,23 @@ def draw_selector(screen, graphicalBoard, col, row):
         pygame.draw.rect(screen, (255, 0, 0, 50), rect, 2)
 
 
-def draw_drag(screen, graphicalBoard, selected_piece):
-    if selected_piece:
+def draw_drag(screen, graphicalBoard, selectedGraphicalPiece):
+    if selectedGraphicalPiece:
         col, row = get_square_under_mouse()
         if graphicalBoard.getPiece(row, col) is not None:
             rect = (display_variables.get("board_offset_x") + col * display_variables.get("fieldsize"),
                     display_variables.get("board_offset_y") + row * display_variables.get("fieldsize"),
                     display_variables.get("fieldsize"), display_variables.get("fieldsize"))
             pygame.draw.rect(screen, (0, 0, 255, 50), rect, 2)
-
-        #        color, type = selected_piece[0]
-        #        print(color, type)
-        #        s1 = font.render(type[0], True, pygame.Color(color))
-        #        s2 = font.render(type[0], True, pygame.Color('darkgrey'))
-        pos = pygame.Vector2(pygame.mouse.get_pos())
-
-        #        drawThis = graphicalBoard.getPiece(row, col).getImageToDraw()
-
-        #        screen.blit(drawThis, s2.get_rect(center=pos + (1, 1)))
-        #        screen.blit(s1, s1.get_rect(center=pos))
-        selected_rect = pygame.Rect(
-            display_variables.get("board_offset_x") + selected_piece[1] * display_variables.get("fieldsize"),
-            display_variables.get("board_offset_y") + selected_piece[2] * display_variables.get("fieldsize"),
+            #        s1 = font.render(type[0], True, pygame.Color(color))
+            #        s2 = font.render(type[0], True, pygame.Color('darkgrey'))
+            pos = pygame.Vector2(pygame.mouse.get_pos())
+            #drawThis = graphicalBoard.getPiece(row, col).getImageToDraw()
+            #screen.blit(drawThis, s2.get_rect(center=pos + (1, 1)))
+            #        screen.blit(s1, s1.get_rect(center=pos))
+            selected_rect = pygame.Rect(
+            display_variables.get("board_offset_x") + selectedGraphicalPiece[1] * display_variables.get("fieldsize"),
+            display_variables.get("board_offset_y") + selectedGraphicalPiece[2] * display_variables.get("fieldsize"),
             display_variables.get("fieldsize"), display_variables.get("fieldsize"))
         pygame.draw.line(screen, pygame.Color('red'), selected_rect.center, pos)
         return col, row
@@ -98,7 +92,7 @@ def main():
     clock = pygame.time.Clock()
     board_surf = create_board_surf()
 
-    selected_piece = None
+    selectedGraphicalPiece = None
     drop_pos = None
 
     while True:
@@ -119,15 +113,17 @@ def main():
 
         if e.type == pygame.MOUSEBUTTONDOWN:
             if graphicalBoard.getPiece(row, col) is not None:
-                selected_piece = graphicalBoard.getPiece(row, col), col, row
+                selectedGraphicalPiece = graphicalBoard.getPiece(row, col)
+                selectedpiece = Piece(selectedGraphicalPiece.getIntType())
+                getPossibleMoves(selectedGraphicalPiece.getFieldIndex(), curBoard.generateDenseBoard())
 
         if e.type == pygame.MOUSEBUTTONUP:
             if drop_pos:
-                tempGraphicalPiece, colOld, rowOld = selected_piece
+                tempGraphicalPiece, colOld, rowOld = selectedGraphicalPiece
                 curBoard.setPiece(0, getBoardIndex(colOld, rowOld))
                 curBoard.setPiece(tempGraphicalPiece.getIntType(), getBoardIndex(col, row))
                 graphicalBoard.importBoard(curBoard)
-                selected_piece = None
+                selectedGraphicalPiece = None
                 drop_pos = None
 
         gameDisplay.fill(pygame.Color('grey'))
@@ -135,7 +131,7 @@ def main():
 
         if row is not None:
             draw_selector(gameDisplay, graphicalBoard, col, row)
-        drop_pos = draw_drag(gameDisplay, graphicalBoard, selected_piece)
+        drop_pos = draw_drag(gameDisplay, graphicalBoard, selectedGraphicalPiece)
 
         clock.tick(60)
 

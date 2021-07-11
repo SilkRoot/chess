@@ -49,6 +49,7 @@ class Board:
 
     def setPiece(self, piece, index):
         self.b[index] = piece
+        self.generateDenseBoard()
 
     def importFEN(self, fenString):
         fenString = fenString
